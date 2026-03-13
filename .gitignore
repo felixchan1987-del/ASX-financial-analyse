@@ -9,8 +9,9 @@ build/
 *_cache.json
 *_state.json
 
-# Generated reports
+# Generated reports (except GitHub Pages)
 *.html
+!docs/index.html
 
 # Claude
 .claude/
