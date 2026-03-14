@@ -103,6 +103,21 @@ def main():
         html, count=1, flags=re.DOTALL
     )
 
+    # Disable manual trading — replace executeBuy/sellManual with static messages
+    html = re.sub(
+        r'// ── Manual trading.*?(?=// ──|</script>)',
+        '// Manual trading disabled in static build\n'
+        'function executeBuy() {\n'
+        '  document.getElementById("tradeMsg").textContent = '
+        '"Trading requires the local server. Run launch_report.bat to trade.";\n'
+        '  document.getElementById("tradeMsg").style.color = "#e67e22";\n'
+        '}\n'
+        'function sellManual(t) {\n'
+        '  alert("Trading requires the local server. Run launch_report.bat to trade.");\n'
+        '}\n',
+        html, count=1, flags=re.DOTALL
+    )
+
     out = os.path.join(DOCS_DIR, "index.html")
     with open(out, "w", encoding="utf-8") as f:
         f.write(html)

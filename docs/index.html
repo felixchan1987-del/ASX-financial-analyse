@@ -15150,50 +15150,14 @@ function filterQuant(val, btn) {
   });
 }
 
-// ── Manual trading ──────────────────────────────────────────────────────────
+// Manual trading disabled in static build
 function executeBuy() {
-  var ticker = document.getElementById('manualTicker').value;
-  var amount = parseFloat(document.getElementById('manualAmount').value);
   var msg = document.getElementById('tradeMsg');
-  if (!ticker) { msg.textContent = 'Please select a stock.'; msg.style.color='#e74c3c'; return; }
-  if (!amount || amount <= 0) { msg.textContent = 'Enter a valid amount.'; msg.style.color='#e74c3c'; return; }
-  msg.textContent = 'Processing...'; msg.style.color='#888';
-  fetch('/api/manual/buy', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ticker: ticker, amount: amount})
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(d) {
-    msg.textContent = d.msg;
-    msg.style.color = d.ok ? '#27ae60' : '#e74c3c';
-    if (d.ok) { setTimeout(function() { location.hash='#manual'; location.reload(); }, 800); }
-  })
-  .catch(function(e) {
-    msg.textContent = 'Server not running. Use launch_report.bat.';
-    msg.style.color = '#e74c3c';
-  });
+  msg.textContent = 'Trading requires the local server. Run launch_report.bat to trade.';
+  msg.style.color = '#e67e22';
 }
-
 function executeSell(ticker) {
-  if (!confirm('Sell all shares of ' + ticker.replace('.AX','') + '?')) return;
-  var msg = document.getElementById('tradeMsg');
-  msg.textContent = 'Selling...'; msg.style.color='#888';
-  fetch('/api/manual/sell', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ticker: ticker, shares: 'all'})
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(d) {
-    msg.textContent = d.msg;
-    msg.style.color = d.ok ? '#27ae60' : '#e74c3c';
-    if (d.ok) { setTimeout(function() { location.hash='#manual'; location.reload(); }, 800); }
-  })
-  .catch(function(e) {
-    msg.textContent = 'Server not running.';
-    msg.style.color = '#e74c3c';
-  });
+  alert('Trading requires the local server. Run launch_report.bat to trade.');
 }
 
 // Refresh disabled in static build
