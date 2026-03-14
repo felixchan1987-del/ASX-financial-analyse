@@ -15301,25 +15301,6 @@ function executeSell(ticker) {
 function triggerRefresh() {
   document.getElementById('refresh-status').textContent = 'This is a static snapshot. Run the server locally for live data.';
 }
-    });
-}
-
-// On page load: check server for age info
-window.addEventListener('load', function() {
-  fetch('/api/status')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.last_updated) {
-        var age = d.age_minutes !== null ? ' (' + d.age_minutes + ' min ago)' : '';
-        document.getElementById('last-updated').textContent = 'Data as of ' + d.last_updated + age;
-      }
-      if (d.refresh_running) {
-        document.getElementById('refresh-btn').disabled = true;
-        pollRefreshStatus();
-      }
-    })
-    .catch(function() { /* static file mode — ignore */ });
-});
 </script>
 </body>
 </html>

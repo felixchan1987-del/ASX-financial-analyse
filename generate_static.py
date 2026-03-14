@@ -94,10 +94,12 @@ def main():
         '<button id="refresh-btn" disabled style="opacity:.5;cursor:default">'
         '&#x1f4f8; Static Snapshot &mdash; updates daily at 4:30 PM AEST</button>'
     )
-    # Remove the triggerRefresh / pollRefreshStatus JS
+    # Replace the auto-refresh JS block (from its header to </script>)
+    # with a no-op version that preserves the closing tags
     html = re.sub(
-        r'// ── Auto-refresh.*?(?=// ──|\Z)',
-        '// Refresh disabled in static build\n',
+        r'// ── Auto-refresh.*?(?=</script>)',
+        '// Refresh disabled in static build\n'
+        'function triggerRefresh() {}\n',
         html, count=1, flags=re.DOTALL
     )
 
