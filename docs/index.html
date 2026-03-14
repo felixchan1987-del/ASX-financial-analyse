@@ -55,7 +55,7 @@
   <p>All figures in AUD unless otherwise noted &bull; Data: Yahoo Finance</p>
   <div class="refresh-bar">
     <span id="last-updated">Data as of 13 Mar 2026 16:37</span>
-    <button id="refresh-btn" onclick="triggerRefresh()">&#x21bb; Refresh Data</button>
+    <button id="refresh-btn" disabled style="opacity:.5;cursor:default">&#x1f4f8; Static Snapshot</button>
     <span id="refresh-status"></span>
   </div>
 </div>
@@ -15297,36 +15297,10 @@ function executeSell(ticker) {
   });
 }
 
-// ── Auto-refresh (requires local server at localhost:8765) ──────────────────
+// ── Static GitHub Pages version — no live refresh ──────────────────
 function triggerRefresh() {
-  var btn = document.getElementById('refresh-btn');
-  var status = document.getElementById('refresh-status');
-  btn.disabled = true;
-  status.textContent = 'Starting refresh...';
-  fetch('/api/refresh', {method: 'POST'})
-    .then(function() { pollRefreshStatus(); })
-    .catch(function(e) {
-      status.textContent = 'Run launch_report.bat to enable live refresh.';
-      btn.disabled = false;
-    });
+  document.getElementById('refresh-status').textContent = 'This is a static snapshot. Run the server locally for live data.';
 }
-
-function pollRefreshStatus() {
-  fetch('/api/status')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      var status = document.getElementById('refresh-status');
-      if (d.refresh_running) {
-        status.textContent = d.refresh_message + ' (' + d.refresh_progress + '/' + d.refresh_total + ')';
-        setTimeout(pollRefreshStatus, 1500);
-      } else {
-        status.textContent = 'Done! Reloading...';
-        setTimeout(function() { location.reload(); }, 800);
-      }
-    })
-    .catch(function() {
-      document.getElementById('refresh-status').textContent = 'Server not running.';
-      document.getElementById('refresh-btn').disabled = false;
     });
 }
 
