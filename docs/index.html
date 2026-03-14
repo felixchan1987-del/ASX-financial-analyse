@@ -15197,3 +15197,9 @@ function executeSell(ticker) {
 }
 
 // Refresh disabled in static build
+function triggerRefresh() {
+  document.getElementById('refresh-status').textContent = 'This is a static snapshot. Run the server locally for live data.';
+}
+</script>
+</body>
+</html>
