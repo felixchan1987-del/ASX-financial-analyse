@@ -6,6 +6,7 @@ Usage:
     python generate_static.py
 """
 
+import argparse
 import json
 import os
 import sys
@@ -29,6 +30,13 @@ def log(msg):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Generate ASX200 static report")
+    parser.add_argument("--intraday", action="store_true",
+                        help="Reuse news/quant caches for a fast price-only refresh "
+                             "(news cached 6h, quant 4h). Use for intra-day cron runs.")
+    args = parser.parse_args()
+    force = not args.intraday
+
     os.makedirs(DOCS_DIR, exist_ok=True)
 
     # 1. Fetch company data
@@ -50,7 +58,7 @@ def main():
     # 2. Sector news
     log("Fetching sector news...")
     try:
-        sector_news = fetch_sector_news(force_refresh=True)
+        sector_news = fetch_sector_news(force_refresh=force)
     except Exception as e:
         log(f"  Sector news error: {e}")
         sector_news = {}
@@ -58,7 +66,7 @@ def main():
     # 3. Company news + reassessments
     log("Fetching company news...")
     try:
-        company_news = fetch_company_news(companies, force_refresh=True)
+        company_news = fetch_company_news(companies, force_refresh=force)
         reassessments = {}
         for c in companies:
             ticker = c.get("ticker", "")
@@ -74,7 +82,7 @@ def main():
     # 4. Quant analysis
     log("Computing quant analysis...")
     try:
-        quant_data = fetch_quant_data(companies, force_refresh=True,
+        quant_data = fetch_quant_data(companies, force_refresh=force,
                                        progress_cb=lambda m: None)
     except Exception as e:
         log(f"  Quant error: {e}")
@@ -92,7 +100,7 @@ def main():
     html = html.replace(
         '<button id="refresh-btn" onclick="triggerRefresh()">&#x21bb; Refresh Data</button>',
         '<button id="refresh-btn" disabled style="opacity:.5;cursor:default">'
-        '&#x1f4f8; Static Snapshot &mdash; updates daily at 4:30 PM AEST</button>'
+        '&#x1f4f8; Static Snapshot &mdash; refreshed hourly during ASX market hours</button>'
     )
     # Replace the auto-refresh JS block (from its header to </script>)
     # with a no-op version that preserves the closing tags
