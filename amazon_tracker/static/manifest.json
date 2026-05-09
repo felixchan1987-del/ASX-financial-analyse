@@ -1,0 +1,18 @@
+{
+  "name": "Amazon Price Tracker",
+  "short_name": "Prices",
+  "description": "Track Amazon product prices from your phone",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#FF9900",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -9,9 +9,13 @@ build/
 *_cache.json
 *_state.json
 
-# Generated reports (except GitHub Pages)
+# Generated reports (except GitHub Pages and app templates)
 *.html
 !docs/index.html
+!amazon_tracker/templates/*.html
+
+# Price tracker runtime database
+amazon_tracker/tracker.db
 
 # Claude
 .claude/

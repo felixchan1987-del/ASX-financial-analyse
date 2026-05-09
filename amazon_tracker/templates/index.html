@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#FF9900">
+  <title>Price Tracker</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:    #FF9900;
+      --primary-dk: #e68a00;
+      --bg:         #f0f2f5;
+      --card:       #ffffff;
+      --text:       #111827;
+      --text2:      #6b7280;
+      --border:     #e5e7eb;
+      --success:    #10b981;
+      --danger:     #ef4444;
+      --shadow:     0 2px 10px rgba(0,0,0,0.07);
+      --r:          16px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:     #0f172a;
+        --card:   #1e293b;
+        --text:   #f1f5f9;
+        --text2:  #94a3b8;
+        --border: #334155;
+        --shadow: 0 2px 10px rgba(0,0,0,0.35);
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      padding-top: calc(14px + env(safe-area-inset-top));
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow);
+    }
+    .h-title {
+      font-size: 19px; font-weight: 700;
+      display: flex; align-items: center; gap: 9px;
+    }
+    .h-logo {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: var(--primary); display: flex; align-items: center;
+      justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    .h-sub { font-size: 11px; color: var(--text2); font-weight: 400; margin-top: 1px; }
+
+    .btn-icon {
+      background: none; border: none; color: var(--text2);
+      font-size: 22px; cursor: pointer; padding: 8px; border-radius: 50%;
+      transition: background .15s; -webkit-tap-highlight-color: transparent;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-icon:active { background: var(--border); }
+    .spinning { animation: spin .9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Main ── */
+    main {
+      padding: 16px;
+      padding-bottom: calc(96px + env(safe-area-inset-bottom));
+      max-width: 600px; margin: 0 auto;
+    }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center; padding: 64px 24px;
+      color: var(--text2);
+    }
+    .empty-icon { font-size: 72px; margin-bottom: 16px; }
+    .empty h3 { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .empty p  { font-size: 14px; line-height: 1.6; max-width: 260px; margin: 0 auto; }
+
+    /* ── Product card ── */
+    .card {
+      background: var(--card); border-radius: var(--r);
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      padding: 14px; margin-bottom: 12px;
+      cursor: pointer;
+      transition: transform .13s, box-shadow .13s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card:active { transform: scale(.978); box-shadow: none; }
+
+    .card-top { display: flex; gap: 12px; align-items: flex-start; }
+
+    .prod-img {
+      width: 72px; height: 72px; border-radius: 10px;
+      object-fit: contain; background: #fafafa; flex-shrink: 0;
+    }
+    .prod-img-ph {
+      width: 72px; height: 72px; border-radius: 10px;
+      background: var(--border); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px;
+    }
+    .prod-info { flex: 1; min-width: 0; }
+    .prod-name {
+      font-size: 13px; font-weight: 500; line-height: 1.45;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; margin-bottom: 8px; color: var(--text);
+    }
+    .price-row { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
+    .price-big { font-size: 26px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .badge {
+      font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 6px;
+    }
+    .badge-low  { color: var(--success); background: rgba(16,185,129,.12); }
+    .badge-high { color: var(--danger);  background: rgba(239,68,68,.10); }
+
+    .card-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+    }
+    .foot-meta { font-size: 11.5px; color: var(--text2); }
+    .foot-meta b { color: var(--success); font-weight: 600; }
+
+    .btn-del {
+      background: none; border: none; color: var(--text2);
+      font-size: 16px; cursor: pointer; padding: 5px 9px;
+      border-radius: 8px; transition: color .15s, background .15s;
+      -webkit-tap-highlight-color: transparent; line-height: 1;
+    }
+    .btn-del:active { color: var(--danger); background: rgba(239,68,68,.1); }
+
+    .footer-hint {
+      text-align: center; font-size: 11px; color: var(--text2);
+      margin-top: 8px;
+    }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed;
+      bottom: calc(22px + env(safe-area-inset-bottom));
+      right: 22px;
+      width: 62px; height: 62px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 50%; font-size: 30px; font-weight: 300;
+      cursor: pointer; box-shadow: 0 4px 18px rgba(255,153,0,.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200;
+      transition: transform .18s, box-shadow .18s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fab:active { transform: scale(.9); box-shadow: 0 2px 8px rgba(255,153,0,.3); }
+
+    /* ── Overlay / bottom-sheet ── */
+    .overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,.52);
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s;
+    }
+    .overlay.open { opacity: 1; pointer-events: all; }
+
+    .sheet {
+      background: var(--card);
+      border-radius: 24px 24px 0 0;
+      padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+      width: 100%; max-width: 600px;
+      transform: translateY(100%);
+      transition: transform .3s cubic-bezier(.34,1.2,.64,1);
+    }
+    .overlay.open .sheet { transform: translateY(0); }
+
+    .sheet-handle {
+      width: 38px; height: 4px; border-radius: 2px;
+      background: var(--border); margin: 0 auto 18px;
+    }
+    .sheet-title { font-size: 18px; font-weight: 700; margin-bottom: 14px; }
+
+    /* ── Add form ── */
+    .input-row { display: flex; gap: 9px; margin-bottom: 10px; }
+    .url-inp {
+      flex: 1; padding: 14px 15px;
+      border: 2px solid var(--border); border-radius: 12px;
+      font-size: 14px; background: var(--bg); color: var(--text);
+      outline: none; transition: border-color .2s;
+      -webkit-appearance: none;
+    }
+    .url-inp:focus { border-color: var(--primary); }
+    .btn-add {
+      padding: 14px 18px; background: var(--primary); color: #fff;
+      border: none; border-radius: 12px; font-size: 14px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      transition: background .15s, opacity .15s;
+      -webkit-tap-highlight-color: transparent;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-add:active  { background: var(--primary-dk); }
+    .btn-add:disabled { opacity: .55; cursor: not-allowed; }
+
+    .err-msg { color: var(--danger); font-size: 13px; min-height: 18px; margin-bottom: 4px; }
+    .hint { color: var(--text2); font-size: 12px; line-height: 1.55; }
+
+    /* ── History sheet ── */
+    .hist-sheet {
+      background: var(--card);
+      border-radius: 24px 24px 0 0;
+      padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+      width: 100%; max-width: 600px;
+      max-height: 75dvh; overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform .3s cubic-bezier(.34,1.2,.64,1);
+    }
+    .overlay.open .hist-sheet { transform: translateY(0); }
+
+    .hist-prod-name {
+      font-size: 13px; color: var(--text2); margin-bottom: 14px;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden; line-height: 1.45;
+    }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .stat { background: var(--bg); border-radius: 12px; padding: 12px; text-align: center; }
+    .stat-val { font-size: 17px; font-weight: 800; }
+    .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 3px; }
+    .chart-wrap { position: relative; height: 195px; margin-bottom: 18px; }
+
+    .btn-close {
+      width: 100%; padding: 14px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--text);
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .btn-close:active { background: var(--border); }
+
+    /* ── Spinner ── */
+    .spin-sm {
+      width: 15px; height: 15px;
+      border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+      border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="h-title">
+    <div class="h-logo">📦</div>
+    <div>
+      Price Tracker
+      <div class="h-sub">Amazon price monitor</div>
+    </div>
+  </div>
+  <button class="btn-icon" id="btn-refresh" onclick="refreshAll()" title="Refresh all prices">↻</button>
+</header>
+
+<!-- Product list -->
+<main id="app"></main>
+
+<!-- FAB -->
+<button class="fab" onclick="openAdd()">+</button>
+
+<!-- ── Add-product sheet ── -->
+<div class="overlay" id="add-overlay" onclick="bgClose(event,'add-overlay')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Track a Product</div>
+    <div class="input-row">
+      <input type="url" id="url-inp" class="url-inp"
+             placeholder="Paste Amazon product URL…"
+             autocomplete="off" autocorrect="off" autocapitalize="off"
+             inputmode="url">
+      <button class="btn-add" id="btn-add" onclick="addProduct()">Add</button>
+    </div>
+    <div class="err-msg" id="add-err"></div>
+    <p class="hint">Paste any Amazon product link — amazon.com, amazon.com.au, short links, etc.</p>
+  </div>
+</div>
+
+<!-- ── Price-history sheet ── -->
+<div class="overlay" id="hist-overlay" onclick="bgClose(event,'hist-overlay')">
+  <div class="hist-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Price History</div>
+    <p class="hist-prod-name" id="hist-name"></p>
+    <div class="stat-grid" id="hist-stats"></div>
+    <div class="chart-wrap"><canvas id="price-chart"></canvas></div>
+    <button class="btn-close" onclick="closeHist()">Close</button>
+  </div>
+</div>
+
+<script>
+/* ── State ── */
+let products = [];
+let chart    = null;
+
+/* ── Boot ── */
+loadProducts();
+
+/* ── API ── */
+async function loadProducts() {
+  try {
+    const res = await fetch('/api/products');
+    products  = await res.json();
+    render();
+  } catch {
+    document.getElementById('app').innerHTML =
+      '<p style="text-align:center;color:var(--text2);padding:48px 20px">Could not load products.</p>';
+  }
+}
+
+async function addProduct() {
+  const inp  = document.getElementById('url-inp');
+  const btn  = document.getElementById('btn-add');
+  const errEl= document.getElementById('add-err');
+  const url  = inp.value.trim();
+
+  errEl.textContent = '';
+  if (!url) { errEl.textContent = 'Please paste an Amazon URL.'; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin-sm"></span>';
+
+  try {
+    const res  = await fetch('/api/products', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({url}),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Failed to add product.'; return; }
+
+    inp.value = '';
+    document.getElementById('add-overlay').classList.remove('open');
+    await loadProducts();
+  } catch {
+    errEl.textContent = 'Network error. Please try again.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add';
+  }
+}
+
+async function deleteProduct(e, id) {
+  e.stopPropagation();
+  if (!confirm('Remove this product?')) return;
+  await fetch(`/api/products/${id}`, {method:'DELETE'});
+  products = products.filter(p => p.id !== id);
+  render();
+}
+
+async function refreshAll() {
+  const btn = document.getElementById('btn-refresh');
+  btn.classList.add('spinning');
+  btn.disabled = true;
+  try {
+    await fetch('/api/refresh', {method:'POST'});
+    await loadProducts();
+  } finally {
+    btn.classList.remove('spinning');
+    btn.disabled = false;
+  }
+}
+
+async function showHistory(id) {
+  const prod = products.find(p => p.id === id);
+  if (!prod) return;
+
+  document.getElementById('hist-name').textContent = prod.name || '';
+  document.getElementById('hist-stats').innerHTML  = '';
+  document.getElementById('hist-overlay').classList.add('open');
+
+  try {
+    const res     = await fetch(`/api/products/${id}/history`);
+    const history = await res.json();
+
+    if (history.length < 1) {
+      document.getElementById('hist-stats').innerHTML =
+        '<p style="grid-column:1/-1;text-align:center;color:var(--text2);font-size:13px">No history yet — tap ↻ to fetch prices.</p>';
+      renderChart([], [], '$');
+      return;
+    }
+
+    const prices   = history.map(h => h.price);
+    const labels   = history.map(h => fmtDate(h.checked_at));
+    const cur      = prices.at(-1);
+    const low      = Math.min(...prices);
+    const high     = Math.max(...prices);
+    const currency = prod.currency || '$';
+
+    document.getElementById('hist-stats').innerHTML = `
+      <div class="stat">
+        <div class="stat-val">${currency}${cur.toFixed(2)}</div>
+        <div class="stat-lbl">Current</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" style="color:var(--success)">${currency}${low.toFixed(2)}</div>
+        <div class="stat-lbl">Lowest</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" style="color:var(--danger)">${currency}${high.toFixed(2)}</div>
+        <div class="stat-lbl">Highest</div>
+      </div>
+    `;
+    renderChart(labels, prices, currency);
+  } catch {
+    document.getElementById('hist-stats').innerHTML =
+      '<p style="grid-column:1/-1;text-align:center;color:var(--danger);font-size:13px">Failed to load history.</p>';
+  }
+}
+
+/* ── Render ── */
+function render() {
+  const app = document.getElementById('app');
+
+  if (products.length === 0) {
+    app.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">🛍️</div>
+        <h3>No products tracked yet</h3>
+        <p>Tap <strong>+</strong> to add an Amazon product URL and start watching prices.</p>
+      </div>`;
+    return;
+  }
+
+  const cards = products.map(p => {
+    const cur  = p.current_price;
+    const low  = p.lowest_price;
+    const c    = p.currency || '$';
+    const curS = cur  != null ? `${c}${cur.toFixed(2)}`  : 'N/A';
+    const lowS = low  != null ? `${c}${low.toFixed(2)}`  : null;
+    const isLow = cur != null && low != null && cur <= low + 0.01;
+    const imgH = p.image_url
+      ? `<img class="prod-img" src="${esc(p.image_url)}" alt="" loading="lazy" onerror="this.style.display='none'">`
+      : `<div class="prod-img-ph">📦</div>`;
+
+    return `
+      <div class="card" onclick="showHistory(${p.id})">
+        <div class="card-top">
+          ${imgH}
+          <div class="prod-info">
+            <div class="prod-name">${esc(p.name || 'Unknown Product')}</div>
+            <div class="price-row">
+              <span class="price-big">${curS}</span>
+              ${isLow ? '<span class="badge badge-low">Lowest ever!</span>' : ''}
+            </div>
+          </div>
+        </div>
+        <div class="card-foot">
+          <span class="foot-meta">
+            ${lowS ? `Lowest: <b>${lowS}</b> &bull; ` : ''}Updated ${timeAgo(p.last_checked)}
+          </span>
+          <button class="btn-del" onclick="deleteProduct(event,${p.id})" title="Remove">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  app.innerHTML = cards + '<p class="footer-hint">Tap a card to see price history &bull; ↻ to refresh now</p>';
+}
+
+/* ── Chart ── */
+function renderChart(labels, prices, currency) {
+  const ctx   = document.getElementById('price-chart').getContext('2d');
+  const dark  = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const grid  = dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.06)';
+  const tick  = dark ? '#94a3b8' : '#6b7280';
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: prices,
+        borderColor: '#FF9900',
+        backgroundColor: 'rgba(255,153,0,.10)',
+        borderWidth: 2.5,
+        pointRadius: prices.length > 30 ? 0 : 4,
+        pointBackgroundColor: '#FF9900',
+        fill: true, tension: 0.35,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {display: false},
+        tooltip: {callbacks: {label: ctx => `${currency}${ctx.parsed.y.toFixed(2)}`}},
+      },
+      scales: {
+        x: {grid:{color:grid}, ticks:{color:tick, maxRotation:45, font:{size:10}}},
+        y: {grid:{color:grid}, ticks:{color:tick, font:{size:10},
+            callback: v => `${currency}${v}`}},
+      },
+    },
+  });
+}
+
+/* ── Modals ── */
+function openAdd() {
+  document.getElementById('add-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('url-inp').focus(), 320);
+}
+function closeHist() {
+  document.getElementById('hist-overlay').classList.remove('open');
+}
+function bgClose(e, id) {
+  if (e.target === document.getElementById(id))
+    document.getElementById(id).classList.remove('open');
+}
+
+/* ── Utils ── */
+function timeAgo(iso) {
+  if (!iso) return 'never';
+  const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 60)   return 'just now';
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  if (s < 86400)return `${Math.floor(s/3600)}h ago`;
+  return `${Math.floor(s/86400)}d ago`;
+}
+function fmtDate(iso) {
+  const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+  return d.toLocaleDateString('en-AU', {month:'short', day:'numeric'});
+}
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* Enter key in URL input */
+document.getElementById('url-inp').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addProduct();
+});
+</script>
+</body>
+</html>
