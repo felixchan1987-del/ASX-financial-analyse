@@ -2,9 +2,11 @@ name: Update ASX200 Report
 
 on:
   schedule:
-    # 4:30 PM AEST (06:30 UTC) — after ASX market close, weekdays
+    # Intra-day price refresh during ASX market hours (10am-3pm AEST = 00:00-05:00 UTC), weekdays
+    - cron: '0 0-5 * * 1-5'
+    # Post-close full refresh including news + quant (4:30 PM AEST = 06:30 UTC), weekdays
     - cron: '30 6 * * 1-5'
-  workflow_dispatch:  # manual trigger from GitHub UI
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -25,8 +27,25 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Persist news/quant caches between runs so intra-day refreshes
+      # only re-fetch prices, not the full news + quant pipeline.
+      - name: Restore news/quant cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            news_cache.json
+            quant_cache.json
+          key: asx-data-cache-${{ github.run_id }}
+          restore-keys: |
+            asx-data-cache-
+
       - name: Generate static report
-        run: python generate_static.py
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 0-5 * * 1-5" ]; then
+            python generate_static.py --intraday
+          else
+            python generate_static.py
+          fi
 
       - name: Commit and push updated report
         run: |
