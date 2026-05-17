@@ -1,0 +1,68 @@
+name: Cathay Pacific Award Checker
+
+on:
+  schedule:
+    # Run every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: '0 0,6,12,18 * * *'
+  workflow_dispatch:   # also allow manual trigger
+
+permissions:
+  contents: write      # needed to commit updated availability cache
+
+jobs:
+  check-awards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install playwright
+
+      - name: Install Playwright Chromium
+        run: playwright install chromium --with-deps
+
+      # Restore cached availability data so we only alert on truly NEW seats
+      - name: Restore availability cache
+        uses: actions/cache@v4
+        with:
+          path: cathay_availability.json
+          key: cathay-availability-${{ github.run_id }}
+          restore-keys: |
+            cathay-availability-
+
+      - name: Run award availability check
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+        run: python cathay_checker.py
+
+      # Save updated cache back to the repo so state persists across runs
+      - name: Commit updated availability cache
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cathay_availability.json || true
+          if git diff --cached --quiet; then
+            echo "Cache unchanged — nothing to commit"
+          else
+            git commit -m "chore: update Cathay award availability cache — $(date -u +'%d %b %Y %H:%M UTC')"
+            git push
+          fi
+
+      # Keep debug screenshots (if any) as build artifacts for troubleshooting
+      - name: Upload debug screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-screenshots-${{ github.run_number }}
+          path: debug_screenshots/
+          if-no-files-found: ignore
+          retention-days: 7
