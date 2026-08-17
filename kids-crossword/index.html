@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kids Crossword Fun</title>
+<meta name="description" content="A colorful, easy crossword puzzle game made for kids." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <button id="homeBtn" class="logo-btn" aria-label="Go to puzzle picker">
+      <span class="logo-emoji">🧩</span>
+      <span class="logo-text">Kids Crossword Fun</span>
+    </button>
+    <div id="statsBar" class="stats-bar hidden">
+      <span class="stat">⏱️ <span id="timerDisplay">0:00</span></span>
+      <span class="stat">⭐ <span id="scoreDisplay">0%</span></span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- PUZZLE PICKER SCREEN -->
+  <section id="pickerScreen" class="screen">
+    <div class="hero">
+      <h1>Let's Solve a Puzzle! 🎉</h1>
+      <p>Pick a puzzle below and fill in the boxes with the answers. Have fun!</p>
+    </div>
+    <div id="puzzleGrid" class="puzzle-cards"></div>
+  </section>
+
+  <!-- GAME SCREEN -->
+  <section id="gameScreen" class="screen hidden">
+    <div class="game-toolbar">
+      <button id="backBtn" class="btn btn-ghost">⬅️ Puzzles</button>
+      <h2 id="gameTitle" class="game-title"></h2>
+      <button id="dirToggleBtn" class="btn btn-ghost" title="Switch between Across and Down">🔀 <span id="dirLabel">Across</span></button>
+    </div>
+
+    <div class="game-area">
+      <div class="board-wrap">
+        <div id="crosswordGrid" class="crossword-grid" role="grid" aria-label="Crossword grid"></div>
+
+        <div class="action-row">
+          <button id="checkBtn" class="btn btn-primary">✅ Check</button>
+          <button id="hintBtn" class="btn btn-secondary">💡 Reveal Letter</button>
+          <button id="revealWordBtn" class="btn btn-secondary">🔎 Reveal Word</button>
+          <button id="clearBtn" class="btn btn-ghost">🧹 Clear</button>
+        </div>
+        <p id="feedbackMsg" class="feedback-msg" aria-live="polite"></p>
+      </div>
+
+      <div class="clues-wrap">
+        <div class="clue-col">
+          <h3>➡️ Across</h3>
+          <ul id="acrossClues" class="clue-list"></ul>
+        </div>
+        <div class="clue-col">
+          <h3>⬇️ Down</h3>
+          <ul id="downClues" class="clue-list"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>Made with 💛 for young word explorers.</p>
+</footer>
+
+<!-- WIN MODAL -->
+<div id="winModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+  <div class="modal-card">
+    <div class="confetti" aria-hidden="true"></div>
+    <h2 id="winTitle">🎉 You Did It! 🎉</h2>
+    <p id="winMsg">You solved the whole puzzle. Great job!</p>
+    <div class="modal-actions">
+      <button id="playAgainBtn" class="btn btn-primary">🔁 Play Again</button>
+      <button id="nextPuzzleBtn" class="btn btn-secondary">➡️ Next Puzzle</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

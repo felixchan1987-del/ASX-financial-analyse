@@ -12,6 +12,7 @@ build/
 # Generated reports (except GitHub Pages)
 *.html
 !docs/index.html
+!kids-crossword/*.html
 
 # Claude
 .claude/
